@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ✏️ Có thể sửa: chữ hiện trên tab trình duyệt -->
+  <title>Tổng quan | wcb - Web cơ bản</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-blobs"><span></span><span></span><span></span></div>
+
+  <!-- Màn hình chờ trong lúc kiểm tra đăng nhập -->
+  <div class="auth-page" id="loading" style="gap:14px">
+    <div class="spinner" style="width:32px;height:32px;border-width:3px"></div>
+    <p style="color:var(--text-soft)">Đang kiểm tra đăng nhập...</p>
+  </div>
+
+  <div class="app hidden" id="app">
+
+    <!-- Menu bên trái: được vẽ tự động bởi js/layout.js -->
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="main">
+
+      <!-- Thanh trên cùng -->
+      <header class="topbar glass">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0">
+          <button class="btn btn-ghost btn-sm menu-btn" id="menuBtn" type="button" aria-label="Mở menu">☰</button>
+          <div style="min-width:0">
+            <!-- ✏️ Có thể sửa: tiêu đề trang -->
+            <h1>Tổng quan</h1>
+            <div class="sub" id="today"></div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" id="logoutBtn" type="button">🚪 <span class="btn-text">Đăng xuất</span></button>
+        </div>
+      </header>
+
+      <!-- ===== NỘI DUNG CHÍNH ===== -->
+      <section class="content">
+
+        <!-- Lời chào -->
+        <div class="card glass">
+          <div class="card-title">Xin chào, <span id="helloName"></span> 👋</div>
+          <!-- ✏️ Có thể sửa: câu giới thiệu -->
+          <div class="card-sub" style="margin-bottom:0">Chào mừng bạn đến với bảng điều khiển của wcb.</div>
+        </div>
+
+        <!-- Khung trống: các tính năng (vd: làm việc với Google Sheet) sẽ đặt vào đây sau -->
+        <div class="card glass empty">
+          <div class="big">🧩</div>
+          <h2>Chưa có tính năng nào</h2>
+          <p>Khu vực này sẽ chứa các công cụ được thêm vào sau.</p>
+        </div>
+
+      </section>
+
+      <!-- Chân trang -->
+      <footer class="footer glass">
+        <span>© <span data-year></span> <span data-app-name></span></span>
+        <!-- ✏️ Có thể sửa: dòng chữ bên phải chân trang -->
+        <span>Phiên bản 1.0</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    (async function () {
+      // 'dashboard' = trang này trong menu; false = ai đăng nhập cũng vào được
+      const user = await WCB_LAYOUT.init('dashboard', false);
+      if (!user) return;
+
+      document.getElementById('helloName').textContent = user.fullname;
+      document.getElementById('today').textContent = new Date().toLocaleDateString('vi-VN', {
+        weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ✏️ Có thể sửa: chữ hiện trên tab trình duyệt -->
+  <title>Đăng nhập | wcb - Web cơ bản</title>
+
+  <!-- Phông chữ Be Vietnam Pro (miễn phí, hiển thị tiếng Việt đẹp) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Các đốm sáng mờ phía sau -->
+  <div class="bg-blobs"><span></span><span></span><span></span></div>
+
+  <main class="auth-page">
+    <section class="auth-card glass">
+
+      <!-- Logo và tên -->
+      <div class="brand">
+        <div class="brand-logo" id="logo">wcb</div>
+        <div>
+          <div class="brand-name" id="appName">wcb</div>
+          <div class="brand-sub" id="appFull">Web cơ bản</div>
+        </div>
+      </div>
+      <!-- ✏️ Có thể sửa: câu chào -->
+      <p class="auth-title">Chào mừng bạn! Vui lòng đăng nhập để tiếp tục.</p>
+
+      <!-- 2 thẻ chuyển qua lại -->
+      <div class="tabs" role="tablist">
+        <button class="tab active" id="tabLogin" type="button" role="tab">Đăng nhập</button>
+        <button class="tab" id="tabRegister" type="button" role="tab">Đăng ký</button>
+      </div>
+
+      <!-- Hộp thông báo (ẩn khi chưa có gì) -->
+      <div class="alert hidden" id="msg"></div>
+
+      <!-- ===== FORM ĐĂNG NHẬP ===== -->
+      <form id="formLogin" autocomplete="on">
+        <div class="field">
+          <label for="loginUser">Tên đăng nhập</label>
+          <input class="input" id="loginUser" name="username" autocomplete="username" placeholder="vd: trinh" required>
+        </div>
+        <div class="field">
+          <label for="loginPass">Mật khẩu</label>
+          <div class="pw-wrap">
+            <input class="input" id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="••••••" required>
+            <button class="pw-toggle" type="button" data-target="loginPass">Hiện</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" id="btnLogin">Đăng nhập</button>
+      </form>
+
+      <!-- ===== FORM ĐĂNG KÝ ===== -->
+      <form id="formRegister" class="hidden" autocomplete="off">
+        <div class="field">
+          <label for="regName">Họ tên</label>
+          <input class="input" id="regName" placeholder="vd: Nguyễn Văn A" maxlength="100" required>
+        </div>
+        <div class="field">
+          <label for="regUser">Tên đăng nhập</label>
+          <input class="input" id="regUser" autocomplete="username" placeholder="vd: nguyenvana" maxlength="30" required>
+          <span class="hint">Bắt đầu bằng chữ, chỉ gồm a-z, 0-9, dấu _ hoặc . (3-30 ký tự), không dấu, không khoảng trắng.</span>
+        </div>
+        <div class="field">
+          <label for="regPass">Mật khẩu</label>
+          <div class="pw-wrap">
+            <input class="input" id="regPass" type="password" autocomplete="new-password" placeholder="Ít nhất 6 ký tự" required>
+            <button class="pw-toggle" type="button" data-target="regPass">Hiện</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="regPass2">Nhập lại mật khẩu</label>
+          <input class="input" id="regPass2" type="password" autocomplete="new-password" placeholder="Nhập lại cho chắc" required>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" id="btnRegister">Gửi đăng ký</button>
+        <p class="hint" style="margin-top:10px;text-align:center">Tài khoản mới cần quản trị viên duyệt trước khi đăng nhập được.</p>
+      </form>
+
+      <!-- ✏️ Có thể sửa: dòng chữ cuối thẻ -->
+      <p class="auth-footer">© <span id="year"></span> wcb · Web cơ bản</p>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    /* ---------- Hiện tên web từ config.js ---------- */
+    document.getElementById('appName').textContent = WCB_CONFIG.APP_NAME;
+    document.getElementById('appFull').textContent = WCB_CONFIG.APP_FULLNAME;
+    document.getElementById('logo').textContent = WCB_CONFIG.APP_NAME.slice(0, 3);
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    /* ---------- Đã đăng nhập rồi thì vào thẳng bên trong ---------- */
+    if (WCB.getToken()) location.href = 'dashboard.html';
+
+    /* ---------- Chuyển thẻ Đăng nhập / Đăng ký ---------- */
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const formLogin = document.getElementById('formLogin');
+    const formRegister = document.getElementById('formRegister');
+    const msg = document.getElementById('msg');
+
+    function showTab(which) {
+      const isLogin = which === 'login';
+      tabLogin.classList.toggle('active', isLogin);
+      tabRegister.classList.toggle('active', !isLogin);
+      formLogin.classList.toggle('hidden', !isLogin);
+      formRegister.classList.toggle('hidden', isLogin);
+      hideMsg();
+    }
+    tabLogin.addEventListener('click', function () { showTab('login'); });
+    tabRegister.addEventListener('click', function () { showTab('register'); });
+
+    /* ---------- Hộp thông báo ---------- */
+    function showMsg(text, type) {
+      msg.textContent = text;
+      msg.className = 'alert alert-' + (type || 'error');
+    }
+    function hideMsg() { msg.className = 'alert hidden'; }
+
+    /* ---------- Nút Hiện / Ẩn mật khẩu ---------- */
+    document.querySelectorAll('.pw-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const input = document.getElementById(btn.dataset.target);
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.textContent = show ? 'Ẩn' : 'Hiện';
+      });
+    });
+
+    /* ---------- Nút đang chờ ---------- */
+    function setLoading(btn, loading, text) {
+      btn.disabled = loading;
+      btn.innerHTML = loading ? '<span class="spinner"></span> Đang xử lý...' : text;
+    }
+
+    /* ---------- Gửi đăng nhập ---------- */
+    formLogin.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideMsg();
+      const btn = document.getElementById('btnLogin');
+      setLoading(btn, true);
+      try {
+        const res = await WCB.call('login', {
+          username: document.getElementById('loginUser').value.trim(),
+          password: document.getElementById('loginPass').value
+        });
+        WCB.saveSession(res.token, res.user);
+        showMsg('Đăng nhập thành công! Đang chuyển trang...', 'success');
+        location.href = 'dashboard.html';
+      } catch (err) {
+        showMsg(err.message, 'error');
+        setLoading(btn, false, 'Đăng nhập');
+      }
+    });
+
+    /* ---------- Gửi đăng ký ---------- */
+    formRegister.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideMsg();
+      const pass = document.getElementById('regPass').value;
+      const pass2 = document.getElementById('regPass2').value;
+      if (pass !== pass2) {
+        showMsg('Hai lần nhập mật khẩu không khớp.', 'error');
+        return;
+      }
+      const btn = document.getElementById('btnRegister');
+      setLoading(btn, true);
+      try {
+        const res = await WCB.call('register', {
+          fullname: document.getElementById('regName').value.trim(),
+          username: document.getElementById('regUser').value.trim(),
+          password: pass
+        });
+        formRegister.reset();
+        showTab('login');
+        showMsg(res.message, 'success');
+      } catch (err) {
+        showMsg(err.message, 'error');
+      }
+      setLoading(btn, false, 'Gửi đăng ký');
+    });
+  </script>
+</body>
+</html>

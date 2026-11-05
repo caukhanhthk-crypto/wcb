@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ✏️ Có thể sửa: chữ hiện trên tab trình duyệt -->
+  <title>Quản lý tài khoản | wcb - Web cơ bản</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-blobs"><span></span><span></span><span></span></div>
+
+  <!-- Màn hình chờ trong lúc kiểm tra đăng nhập -->
+  <div class="auth-page" id="loading" style="gap:14px">
+    <div class="spinner" style="width:32px;height:32px;border-width:3px"></div>
+    <p style="color:var(--text-soft)">Đang kiểm tra quyền quản trị...</p>
+  </div>
+
+  <div class="app hidden" id="app">
+
+    <!-- Menu bên trái: được vẽ tự động bởi js/layout.js -->
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="main">
+
+      <!-- Thanh trên cùng -->
+      <header class="topbar glass">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0">
+          <button class="btn btn-ghost btn-sm menu-btn" id="menuBtn" type="button" aria-label="Mở menu">☰</button>
+          <div style="min-width:0">
+            <h1>Quản lý tài khoản</h1>
+            <div class="sub">Duyệt, khóa, đổi quyền, đặt lại mật khẩu và xóa tài khoản</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" id="addBtn" type="button">＋ <span class="btn-text">Tạo tài khoản</span></button>
+          <button class="btn btn-ghost btn-sm" id="logoutBtn" type="button">🚪 <span class="btn-text">Đăng xuất</span></button>
+        </div>
+      </header>
+
+      <section class="content">
+
+        <!-- Thẻ số liệu (bấm vào để lọc nhanh) -->
+        <div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+          <button class="stat glass" type="button" data-quick="" style="text-align:left;color:inherit;font:inherit;cursor:pointer">
+            <div class="stat-label">Tổng tài khoản</div>
+            <div class="stat-value" id="stTotal">–</div>
+          </button>
+          <button class="stat glass" type="button" data-quick="pending" style="text-align:left;color:inherit;font:inherit;cursor:pointer">
+            <div class="stat-label">⏳ Chờ duyệt</div>
+            <div class="stat-value" id="stPending" style="color:var(--warn)">–</div>
+          </button>
+          <button class="stat glass" type="button" data-quick="active" style="text-align:left;color:inherit;font:inherit;cursor:pointer">
+            <div class="stat-label">✅ Hoạt động</div>
+            <div class="stat-value" id="stActive" style="color:var(--ok)">–</div>
+          </button>
+          <button class="stat glass" type="button" data-quick="locked" style="text-align:left;color:inherit;font:inherit;cursor:pointer">
+            <div class="stat-label">🔒 Bị khóa</div>
+            <div class="stat-value" id="stLocked" style="color:var(--danger)">–</div>
+          </button>
+        </div>
+
+        <!-- Danh sách tài khoản -->
+        <div class="card glass">
+          <div class="card-title">Danh sách tài khoản</div>
+          <div class="card-sub">Tài khoản đăng ký mới nằm ở trạng thái "Chờ duyệt" cho tới khi bạn bấm Duyệt.</div>
+
+          <div class="toolbar">
+            <input class="input" id="search" placeholder="🔍 Tìm theo tên đăng nhập hoặc họ tên...">
+            <select class="input" id="filterStatus" aria-label="Lọc trạng thái">
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="active">Hoạt động</option>
+              <option value="locked">Bị khóa</option>
+            </select>
+            <select class="input" id="filterRole" aria-label="Lọc quyền">
+              <option value="">Tất cả quyền</option>
+              <option value="admin">Quản trị viên</option>
+              <option value="user">Thành viên</option>
+            </select>
+            <button class="btn btn-ghost" id="reloadBtn" type="button">↻ Tải lại</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tài khoản</th>
+                  <th>Quyền</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày tạo</th>
+                  <th>Đăng nhập gần nhất</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="tbody">
+                <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-soft)">Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer glass">
+        <span>© <span data-year></span> <span data-app-name></span></span>
+        <span>Phiên bản 1.0</span>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ===== CỬA SỔ: TẠO TÀI KHOẢN ===== -->
+  <div class="modal-backdrop hidden" id="mCreate">
+    <form class="modal glass" id="formCreate" autocomplete="off">
+      <h3>Tạo tài khoản mới</h3>
+      <div class="field">
+        <label for="cName">Họ tên</label>
+        <input class="input" id="cName" maxlength="100" required>
+      </div>
+      <div class="field">
+        <label for="cUser">Tên đăng nhập</label>
+        <input class="input" id="cUser" maxlength="30" required>
+        <span class="hint">Bắt đầu bằng chữ, chỉ gồm a-z, 0-9, dấu _ hoặc . (3-30 ký tự).</span>
+      </div>
+      <div class="field">
+        <label for="cPass">Mật khẩu</label>
+        <input class="input" id="cPass" type="text" minlength="6" placeholder="Ít nhất 6 ký tự" required>
+        <span class="hint">Mật khẩu hiện rõ để bạn chép gửi cho người dùng.</span>
+      </div>
+      <div class="field">
+        <label for="cRole">Quyền</label>
+        <select class="input" id="cRole">
+          <option value="user">Thành viên</option>
+          <option value="admin">Quản trị viên</option>
+        </select>
+      </div>
+      <p class="hint" style="margin-bottom:12px">Tài khoản do quản trị viên tạo được kích hoạt ngay, không cần duyệt.</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" data-close>Hủy</button>
+        <button class="btn btn-primary" type="submit" id="cSubmit">Tạo tài khoản</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== CỬA SỔ: ĐẶT LẠI MẬT KHẨU ===== -->
+  <div class="modal-backdrop hidden" id="mReset">
+    <form class="modal glass" id="formReset" autocomplete="off">
+      <h3>Đặt lại mật khẩu</h3>
+      <p class="card-sub">Tài khoản: <b id="rUserLabel"></b></p>
+      <div class="field">
+        <label for="rPass">Mật khẩu mới</label>
+        <input class="input" id="rPass" type="text" minlength="6" placeholder="Ít nhất 6 ký tự" required>
+        <span class="hint">Sau khi đặt lại, hãy gửi mật khẩu mới cho người dùng.</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" data-close>Hủy</button>
+        <button class="btn btn-primary" type="submit" id="rSubmit">Lưu mật khẩu</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    let ME = null;        // quản trị viên đang đăng nhập
+    let USERS = [];       // danh sách tài khoản tải từ bảng tính
+    const esc = WCB_LAYOUT.esc;
+
+    const STATUS_TEXT = { pending: 'Chờ duyệt', active: 'Hoạt động', locked: 'Bị khóa' };
+
+    /* ---------- Định dạng ngày giờ kiểu Việt Nam ---------- */
+    function fmtDate(v) {
+      if (!v) return '<span style="color:var(--text-faint)">Chưa có</span>';
+      const d = new Date(v);
+      if (isNaN(d)) return esc(v);
+      return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* ---------- Tải danh sách tài khoản ---------- */
+    async function loadUsers() {
+      try {
+        const res = await WCB.call('listUsers');
+        USERS = res.users;
+        render();
+      } catch (err) {
+        document.getElementById('tbody').innerHTML =
+          '<tr><td colspan="6"><div class="alert alert-error" style="margin:0">' + esc(err.message) + '</div></td></tr>';
+      }
+    }
+
+    /* ---------- Vẽ bảng ---------- */
+    function render() {
+      // Số liệu
+      const count = function (s) { return USERS.filter(function (u) { return u.status === s; }).length; };
+      document.getElementById('stTotal').textContent = USERS.length;
+      document.getElementById('stPending').textContent = count('pending');
+      document.getElementById('stActive').textContent = count('active');
+      document.getElementById('stLocked').textContent = count('locked');
+
+      // Lọc
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const fs = document.getElementById('filterStatus').value;
+      const fr = document.getElementById('filterRole').value;
+      const order = { pending: 0, active: 1, locked: 2 };
+      const list = USERS
+        .filter(function (u) {
+          return (!q || u.username.indexOf(q) >= 0 || String(u.fullname).toLowerCase().indexOf(q) >= 0) &&
+                 (!fs || u.status === fs) && (!fr || u.role === fr);
+        })
+        .sort(function (a, b) { return (order[a.status] - order[b.status]) || a.username.localeCompare(b.username); });
+
+      const tbody = document.getElementById('tbody');
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-soft)">Không có tài khoản nào phù hợp.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(function (u) {
+        const isMe = u.username === ME.username;
+        const name = esc(u.username);
+        let actions = '';
+
+        if (isMe) {
+          actions = '<span class="hint">Đây là bạn</span>';
+        } else {
+          if (u.status === 'pending') {
+            actions += '<button class="btn btn-ok btn-sm" data-act="approve" data-u="' + name + '">✔ Duyệt</button>';
+            actions += '<button class="btn btn-danger btn-sm" data-act="reject" data-u="' + name + '">✖ Từ chối</button>';
+          } else {
+            if (u.status === 'active') {
+              actions += '<button class="btn btn-warn btn-sm" data-act="lock" data-u="' + name + '">🔒 Khóa</button>';
+            } else {
+              actions += '<button class="btn btn-ok btn-sm" data-act="unlock" data-u="' + name + '">🔓 Mở khóa</button>';
+            }
+            actions += u.role === 'admin'
+              ? '<button class="btn btn-ghost btn-sm" data-act="demote" data-u="' + name + '">⬇ Hạ quyền</button>'
+              : '<button class="btn btn-ghost btn-sm" data-act="promote" data-u="' + name + '">⬆ Lên quản trị</button>';
+            actions += '<button class="btn btn-ghost btn-sm" data-act="reset" data-u="' + name + '">🔑 Mật khẩu</button>';
+            actions += '<button class="btn btn-danger btn-sm" data-act="delete" data-u="' + name + '">🗑 Xóa</button>';
+          }
+        }
+
+        return '<tr>' +
+          '<td><div style="font-weight:600">' + esc(u.fullname) + '</div>' +
+              '<div class="hint">@' + name + '</div></td>' +
+          '<td><span class="badge badge-' + (u.role === 'admin' ? 'admin' : 'user') + '">' + WCB_LAYOUT.roleText(u.role) + '</span></td>' +
+          '<td><span class="badge badge-' + esc(u.status) + '">' + (STATUS_TEXT[u.status] || esc(u.status)) + '</span></td>' +
+          '<td>' + fmtDate(u.created_at) + '</td>' +
+          '<td>' + fmtDate(u.last_login) + '</td>' +
+          '<td><div class="actions">' + actions + '</div></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    /* ---------- Thực hiện thao tác trên 1 tài khoản ---------- */
+    async function runAction(btn, action, data, confirmText) {
+      if (confirmText && !confirm(confirmText)) return;
+      const old = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      try {
+        const res = await WCB.call(action, data);
+        WCB_LAYOUT.toast(res.message, 'success');
+        await loadUsers();
+      } catch (err) {
+        WCB_LAYOUT.toast(err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = old;
+      }
+    }
+
+    document.getElementById('tbody').addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const u = btn.dataset.u;
+      switch (btn.dataset.act) {
+        case 'approve': runAction(btn, 'setStatus', { username: u, status: 'active' }); break;
+        case 'unlock':  runAction(btn, 'setStatus', { username: u, status: 'active' }); break;
+        case 'lock':    runAction(btn, 'setStatus', { username: u, status: 'locked' },
+                          'Khóa tài khoản "' + u + '"? Người này sẽ không đăng nhập được nữa.'); break;
+        case 'promote': runAction(btn, 'setRole', { username: u, role: 'admin' },
+                          'Nâng "' + u + '" lên Quản trị viên? Người này sẽ có toàn quyền quản lý tài khoản.'); break;
+        case 'demote':  runAction(btn, 'setRole', { username: u, role: 'user' },
+                          'Hạ "' + u + '" xuống Thành viên?'); break;
+        case 'reject':  runAction(btn, 'deleteUser', { username: u },
+                          'Từ chối và xóa đơn đăng ký của "' + u + '"?'); break;
+        case 'delete':  runAction(btn, 'deleteUser', { username: u },
+                          'XÓA VĨNH VIỄN tài khoản "' + u + '"? Không thể hoàn tác.'); break;
+        case 'reset':   openReset(u); break;
+      }
+    });
+
+    /* ---------- Cửa sổ nổi ---------- */
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModals() {
+      document.querySelectorAll('.modal-backdrop').forEach(function (m) { m.classList.add('hidden'); });
+    }
+    document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', closeModals); });
+    document.querySelectorAll('.modal-backdrop').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m) closeModals(); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
+
+    /* ---------- Tạo tài khoản ---------- */
+    document.getElementById('addBtn').addEventListener('click', function () {
+      document.getElementById('formCreate').reset();
+      openModal('mCreate');
+      document.getElementById('cName').focus();
+    });
+
+    document.getElementById('formCreate').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('cSubmit');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Đang tạo...';
+      try {
+        const res = await WCB.call('adminCreateUser', {
+          fullname: document.getElementById('cName').value.trim(),
+          username: document.getElementById('cUser').value.trim(),
+          password: document.getElementById('cPass').value,
+          role: document.getElementById('cRole').value
+        });
+        closeModals();
+        WCB_LAYOUT.toast(res.message, 'success');
+        await loadUsers();
+      } catch (err) {
+        WCB_LAYOUT.toast(err.message, 'error');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Tạo tài khoản';
+    });
+
+    /* ---------- Đặt lại mật khẩu ---------- */
+    let resetTarget = '';
+    function openReset(u) {
+      resetTarget = u;
+      document.getElementById('formReset').reset();
+      document.getElementById('rUserLabel').textContent = '@' + u;
+      openModal('mReset');
+      document.getElementById('rPass').focus();
+    }
+
+    document.getElementById('formReset').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('rSubmit');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
+      try {
+        const res = await WCB.call('resetPassword', {
+          username: resetTarget,
+          newPassword: document.getElementById('rPass').value
+        });
+        closeModals();
+        WCB_LAYOUT.toast(res.message, 'success');
+      } catch (err) {
+        WCB_LAYOUT.toast(err.message, 'error');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Lưu mật khẩu';
+    });
+
+    /* ---------- Tìm kiếm, lọc, tải lại ---------- */
+    ['search', 'filterStatus', 'filterRole'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', render);
+    });
+    document.querySelectorAll('[data-quick]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.getElementById('filterStatus').value = b.dataset.quick;
+        render();
+      });
+    });
+    document.getElementById('reloadBtn').addEventListener('click', async function () {
+      const btn = this;
+      btn.disabled = true;
+      await loadUsers();
+      btn.disabled = false;
+      WCB_LAYOUT.toast('Đã tải lại danh sách.', 'info');
+    });
+
+    /* ---------- Khởi động ---------- */
+    (async function () {
+      // 'admin' = trang này trong menu; true = chỉ quản trị viên được vào
+      ME = await WCB_LAYOUT.init('admin', true);
+      if (!ME) return;
+      loadUsers();
+    })();
+  </script>
+</body>
+</html>
